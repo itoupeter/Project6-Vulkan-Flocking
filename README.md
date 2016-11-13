@@ -3,13 +3,24 @@ Vulkan Flocking: compute and shading in one pipeline!
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 6**
 
-* (TODO) YOUR NAME HERE
-  Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+* Liang Peng
+* Tested on: **54.0.2840.87 m (64-bit)** on
+  Windows 10, i7-6700HQ @ 2.6GHz 8GB, GTX 960 (Personal Laptop)
 
-  ### (TODO: Your README)
+## Overview
 
-  Include screenshots, analysis, etc. (Remember, this is public, so don't put
-  anything here that you don't want to share with the world.)
+![](img/1.gif)
+
+![](img/2.gif)
+
+## Analysis
+
+* Vulkan expects explicit descriptors for generating pipelines and commands because it needs to know how data such as vertex attributes (position, normal, texcoord, index, etc.) are stored in GPU memory and bound to uniforms and variables in shader code so that vs, cs, ps can get correct data to do computation or shading and pass over data to next stage in the pipeline.
+* A situation in which processing algorithm is the same but input data sources are different, such as rendering a textured cube and a textured sphere, with different color maps.
+* Problems to keep in mind when using multiple Vulkan queues
+  * Synchronization. Use fences to make sure a queue is finished processing before other queues denpendent on it.
+  * Race condition. Use mutex to avoid simultanious read/write operations at same address in same buffer.
+* Avoiding the time and memory cost of copying output data of compute stage to input of render stage.
 
 ### Credits
 

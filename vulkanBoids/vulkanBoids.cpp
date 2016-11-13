@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <vector>
 #include <random>
+#include <algorithm>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -33,7 +34,7 @@
 // LOOK: constants for the boids algorithm. These will be passed to the GPU compute part of the assignment
 // using a Uniform Buffer. These parameters should yield a stable and pleasing simulation for an
 // implementation based off the code here: http://studio.sketchpad.cc/sp/pad/view/ro.9cbgCRcgbPOI6/rev.23
-#define RULE1DISTANCE 0.1f // cohesion
+#define RULE1DISTANCE .5f // cohesion
 #define RULE2DISTANCE 0.05f // separation
 #define RULE3DISTANCE 0.05f // alignment
 #define RULE1SCALE 0.02f
@@ -48,7 +49,7 @@ public:
 	bool animate = true;
 
 	// LOOK: this struct contains descriptions of how the vertex buffer should be interpreted by
-	// a strictly graphics pipeline. 
+	// a strictly graphics pipeline.
 	struct {
 		// inputState encapsulates bindingDescriptions and  attributeDescriptions
 		VkPipelineVertexInputStateCreateInfo inputState;
@@ -158,6 +159,7 @@ public:
 		{
 			particle.pos = glm::vec2(rDistribution(rGenerator), rDistribution(rGenerator));
 			// TODO: add randomized velocities with a slight scale here, something like 0.1f.
+			particle.vel = glm::vec2(rDistribution(rGenerator), rDistribution(rGenerator)) * .1f;
 		}
 
 		VkDeviceSize storageBufferSize = particleBuffer.size() * sizeof(Particle);
@@ -235,7 +237,7 @@ public:
 		vertices.attributeDescriptions[0] =
 			vkTools::initializers::vertexInputAttributeDescription(
 			VERTEX_BUFFER_BIND_ID,
-			0, // corresponds to `layout (location = 0) in` in particle.vert 
+			0, // corresponds to `layout (location = 0) in` in particle.vert
 			VK_FORMAT_R32G32_SFLOAT, // what kind of data? vec2
 			offsetof(Particle, pos)); // offset into each Particle struct
 		// Location 1 : Velocity
@@ -244,7 +246,7 @@ public:
 			VERTEX_BUFFER_BIND_ID,
 			1,
 			VK_FORMAT_R32G32_SFLOAT,
-			offsetof(Particle, pos)); // TODO: change this so that we can color the particles based on velocity.
+			offsetof(Particle, vel)); // TODO: change this so that we can color the particles based on velocity.
 
 		// vertices.inputState encapsulates everything we need for these particular buffers to
 		// interface with the graphics pipeline.
@@ -540,13 +542,34 @@ public:
 			compute.descriptorSets[0],
 			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			2,
-			&compute.uniformBuffer.descriptor)
+			&compute.uniformBuffer.descriptor),
 
 			// TODO: write the second descriptorSet, using the top for reference.
 			// We want the descriptorSets to be used for flip-flopping:
 			// on one frame, we use one descriptorSet with the compute pass,
 			// on the next frame, we use the other.
 			// What has to be different about how the second descriptorSet is written here?
+
+			// Binding 0 : Particle position storage buffer
+			vkTools::initializers::writeDescriptorSet(
+			compute.descriptorSets[1], // LOOK: which descriptor set to write to?
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			1, // LOOK: which binding in the descriptor set Layout?
+			&compute.storageBufferA.descriptor), // LOOK: which SSBO?
+
+			// Binding 1 : Particle position storage buffer
+			vkTools::initializers::writeDescriptorSet(
+			compute.descriptorSets[1],
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			0,
+			&compute.storageBufferB.descriptor),
+
+			// Binding 2 : Uniform buffer
+			vkTools::initializers::writeDescriptorSet(
+			compute.descriptorSets[1],
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			2,
+			&compute.uniformBuffer.descriptor)
 		};
 
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(computeWriteDescriptorSets.size()), computeWriteDescriptorSets.data(), 0, NULL);
@@ -590,6 +613,7 @@ public:
 		// We also want to flip what SSBO we draw with in the next
 		// pass through the graphics pipeline.
 		// Feel free to use std::swap here. You should need it twice.
+		std::swap(compute.descriptorSets[0], compute.descriptorSets[1]);
 	}
 
 	// Record command buffers for drawing using the graphics pipeline
@@ -671,7 +695,7 @@ public:
 		bufferBarrier.size = compute.storageBufferA.descriptor.range;
 		bufferBarrier.srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;						// Vertex shader invocations have finished reading from the buffer
 		bufferBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;								// Compute shader wants to write to the buffer
-		
+
 		// Compute and graphics queue may have different queue families (see VulkanDevice::createLogicalDevice)
 		// For the barrier to work across different queues, we need to set their family indices
 		bufferBarrier.srcQueueFamilyIndex = vulkanDevice->queueFamilyIndices.graphics;			// Required as compute and graphics queue may have different families
