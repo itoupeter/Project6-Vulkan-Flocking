@@ -34,7 +34,7 @@
 // LOOK: constants for the boids algorithm. These will be passed to the GPU compute part of the assignment
 // using a Uniform Buffer. These parameters should yield a stable and pleasing simulation for an
 // implementation based off the code here: http://studio.sketchpad.cc/sp/pad/view/ro.9cbgCRcgbPOI6/rev.23
-#define RULE1DISTANCE .5f // cohesion
+#define RULE1DISTANCE .1f // cohesion
 #define RULE2DISTANCE 0.05f // separation
 #define RULE3DISTANCE 0.05f // alignment
 #define RULE1SCALE 0.02f
@@ -718,7 +718,7 @@ public:
 		vkCmdBindDescriptorSets(compute.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute.pipelineLayout, 0, 1, compute.descriptorSets, 0, 0);
 
 		// Record a dispatch of the compute job
-		vkCmdDispatch(compute.commandBuffer, PARTICLE_COUNT / 16, 1, 1);
+		vkCmdDispatch(compute.commandBuffer, PARTICLE_COUNT / 256, 1, 1);
 
 		// Add memory barrier to ensure that compute shader has finished writing to the buffer
 		// Without this the (rendering) vertex shader may display incomplete results (partial data from last frame)

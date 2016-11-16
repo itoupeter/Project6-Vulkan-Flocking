@@ -24,7 +24,7 @@ layout(std140, binding = 1) buffer ParticlesB
    Particle particlesB[ ];
 };
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = 256, local_size_y = 1) in;
 
 // LOOK: rule weights and distances, as well as particle count, based off uniforms.
 // The deltaT here has to be updated every frame to account for changes in
@@ -96,7 +96,7 @@ void main()
 			vVel += averageVelocity / neighbors3 * ubo.rule3Scale;;
 		}
 	}
-	
+
 	// clamp velocity for a more pleasing simulation.
 	vVel = normalize(vVel) * clamp(length(vVel), 0.0, 0.1);
 
