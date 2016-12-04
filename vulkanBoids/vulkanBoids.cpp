@@ -554,15 +554,15 @@ public:
 			vkTools::initializers::writeDescriptorSet(
 			compute.descriptorSets[1], // LOOK: which descriptor set to write to?
 			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-			1, // LOOK: which binding in the descriptor set Layout?
-			&compute.storageBufferA.descriptor), // LOOK: which SSBO?
+			0, // LOOK: which binding in the descriptor set Layout?
+			&compute.storageBufferB.descriptor), // LOOK: which SSBO?
 
 			// Binding 1 : Particle position storage buffer
 			vkTools::initializers::writeDescriptorSet(
 			compute.descriptorSets[1],
 			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-			0,
-			&compute.storageBufferB.descriptor),
+			1,
+			&compute.storageBufferA.descriptor),
 
 			// Binding 2 : Uniform buffer
 			vkTools::initializers::writeDescriptorSet(
@@ -614,6 +614,7 @@ public:
 		// pass through the graphics pipeline.
 		// Feel free to use std::swap here. You should need it twice.
 		std::swap(compute.descriptorSets[0], compute.descriptorSets[1]);
+		std::swap(compute.storageBufferA, compute.storageBufferB);
 	}
 
 	// Record command buffers for drawing using the graphics pipeline
